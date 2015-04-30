@@ -14,7 +14,7 @@ $time = "{0:yyyy-MM-dd}" -f (Get-Date).AddDays(-1)
 $timeinput = Read-Host "请输入您要导出记录的时间，格式为 yyyy-MM-dd（留空默认为 $time ）"
 If ($timeinput)
 {
-$time = $timeinput
+    $time = $timeinput
 }
 
 # 创建*两个*记录文件，并向文件中写入记录的所属日期
@@ -30,33 +30,33 @@ $officenames = @('郑汴路营业厅', '碧沙岗营业厅', '天津路营业厅
 $p = 0
 foreach ($id in $officeids)
 {
-# 向*明细业务*的记录文件中写入营业厅名称
-$streamsingle.WriteLine($officenames[$p])
+    # 向*明细业务*的记录文件中写入营业厅名称
+    $streamsingle.WriteLine($officenames[$p])
 
-# 组装请求的网址，并将结果按Json分析
-$url = "http://10.88.131.228:9080/cbh_business_service/main/transact/rateList.html?officeid=$id&amp;starttime=$time+00%3A00%3A00&amp;endtime=$time+23%3A59%3A59&amp;charttype=hour"
-#echo $url
-$content = (Invoke-WebRequest -Uri $url).Content | ConvertFrom-Json
+    # 组装请求的网址，并将结果按Json分析
+    $url = "http://10.88.131.228:9080/cbh_business_service/main/transact/rateList.html?officeid=$id&amp;starttime=$time+00%3A00%3A00&amp;endtime=$time+23%3A59%3A59&amp;charttype=hour"
+    #echo $url
+    $content = (Invoke-WebRequest -Uri $url).Content | ConvertFrom-Json
 
-#echo $content.Rows.Count
-#echo $content.Rows[0].name $content.Rows[0].status1 $content.Rows[0].status0
-# 根据Json的内容，对每个营业厅的每一项业务进行记录。Json中的*统计*一列，不写入*明细业务*记录中
-for ($i = 0; $i -le $content.Rows.Count; $i++)
-{
-$record = $content.Rows[$i]
-If ($i -eq $content.Rows.Count - 1)
-{
-# 将*统计*列的数据 营业厅名称、总笔数、成功笔数、失败笔数 写入*汇总业务*记录中
-$streamall.WriteLine([string]::Format("{0}`t{1}`t{2}`t{3}", $officenames[$p], $record.status1 + $record.status0, $record.status1, $record.status0))
-}
-else
-{
-# 将除了*统计*列外的每一项的 名称、成功笔数、失败笔数 写入*明细业务*记录中
-$streamsingle.WriteLine([string]::Format("{0}`t{1}`t{2}", $record.name, $record.status1, $record.status0))
-}
-}
+    #echo $content.Rows.Count
+    #echo $content.Rows[0].name $content.Rows[0].status1 $content.Rows[0].status0
+    # 根据Json的内容，对每个营业厅的每一项业务进行记录。Json中的*统计*一列，不写入*明细业务*记录中
+    for ($i = 0; $i -le $content.Rows.Count; $i++)
+    {
+        $record = $content.Rows[$i]
+        If ($i -eq $content.Rows.Count - 1)
+        {
+            # 将*统计*列的数据 营业厅名称、总笔数、成功笔数、失败笔数 写入*汇总业务*记录中
+            $streamall.WriteLine([string]::Format("{0}`t{1}`t{2}`t{3}", $officenames[$p], $record.status1 + $record.status0, $record.status1, $record.status0))
+        }
+        else
+        {
+            # 将除了*统计*列外的每一项的 名称、成功笔数、失败笔数 写入*明细业务*记录中
+            $streamsingle.WriteLine([string]::Format("{0}`t{1}`t{2}", $record.name, $record.status1, $record.status0))
+        }
+    }
 
-$p++
+    $p++
 }
 
 # 关闭记录文件
